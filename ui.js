@@ -1,5 +1,5 @@
 // ============================================================
-// UI Manager — Gothic style: fighter panels, queue, action grid
+// UI Manager — Gothic style V2 (con test section)
 // ============================================================
 
 export class UIManager {
@@ -11,6 +11,8 @@ export class UIManager {
     this.queueRow  = null;
     this.actionBar = null;
     this.joinPanel = null;
+    this.testSection = null;
+    this.testMessages = [];
   }
 
   init() {
@@ -18,7 +20,37 @@ export class UIManager {
     this.buildQueueRow();
     this.buildActionBar();
     this.buildJoinPanel();
+    this.buildTestSection();
     this.showStartModal();
+  }
+
+  // ── TEST SECTION (sostituisce la chat) ────────────────────
+  buildTestSection() {
+    const section = document.createElement('div');
+    section.id = 'test-section';
+    this.overlay.appendChild(section);
+    this.testSection = section;
+  }
+
+  addTestMessage(text, type = 'cmd') {
+    if (!this.testSection) return;
+    
+    const msg = document.createElement('div');
+    msg.className = 'test-msg';
+    
+    if (type === 'cmd') {
+      msg.innerHTML = `<span class="cmd">▶</span> ${text}`;
+    } else if (type === 'user') {
+      msg.innerHTML = `<span class="user">👤</span> ${text}`;
+    } else {
+      msg.textContent = text;
+    }
+    
+    this.testSection.appendChild(msg);
+    
+    while (this.testSection.children.length > 5) {
+      this.testSection.removeChild(this.testSection.firstChild);
+    }
   }
 
   // ── TOP HUD: two fighter panels + VS ─────────────────────
@@ -38,7 +70,7 @@ export class UIManager {
         <div class="hp-track">
           <div class="hp-fill" id="fp-left-hp" style="width:100%;background:#22c55e;"></div>
         </div>
-        <div class="hp-label" style="margin-top:1px;"><span style="color:#fbbf24;font-size:7px;">⚡ ENERGIA</span><span id="fp-left-en-val">0%</span></div>
+        <div class="hp-label" style="margin-top:1px;"><span style="color:#fbbf24;font-size:6px;">⚡</span><span id="fp-left-en-val">0%</span></div>
         <div class="energy-track">
           <div class="energy-fill" id="fp-left-energy" style="width:0%;"></div>
         </div>
@@ -62,7 +94,7 @@ export class UIManager {
         <div class="hp-track">
           <div class="hp-fill" id="fp-right-hp" style="width:100%;background:#22c55e;"></div>
         </div>
-        <div class="hp-label" style="margin-top:1px;"><span style="color:#fbbf24;font-size:7px;">⚡ ENERGIA</span><span id="fp-right-en-val">0%</span></div>
+        <div class="hp-label" style="margin-top:1px;"><span style="color:#fbbf24;font-size:6px;">⚡</span><span id="fp-right-en-val">0%</span></div>
         <div class="energy-track">
           <div class="energy-fill" id="fp-right-energy" style="width:0%;"></div>
         </div>
@@ -89,47 +121,45 @@ export class UIManager {
   buildActionBar() {
     const bar = document.createElement('div');
     bar.id = 'action-bar';
-    // Row 1: utility/basic moves
-    // Row 2: special/powered moves
     bar.innerHTML = `
       <!-- Row 1 -->
       <button class="action-btn btn-join" data-action="join-btn-action">
         <span class="btn-icon">⚔️</span>
-        <span class="btn-label">SALIR<br>1RO</span>
+        <span class="btn-label">ATTACCO<br>🌹</span>
       </button>
       <button class="action-btn btn-hp" data-action="energy">
-        <span class="btn-icon">🌹</span>
-        <span class="btn-label">+25<br>HP</span>
+        <span class="btn-icon">💚</span>
+        <span class="btn-label">CURA<br>+25 HP</span>
       </button>
       <button class="action-btn btn-sword" data-action="superko">
-        <span class="btn-icon">🗡️</span>
-        <span class="btn-label">SWORD/<br>ESPADA</span>
+        <span class="btn-icon">💥</span>
+        <span class="btn-label">SUPER<br>COLPO</span>
       </button>
       <button class="action-btn btn-power" data-action="shield">
-        <span class="btn-icon">💪</span>
-        <span class="btn-label">+<br>POWER</span>
+        <span class="btn-icon">🛡️</span>
+        <span class="btn-label">SCUDO<br>BLOCCO</span>
       </button>
       <button class="action-btn btn-allsum" data-action="rage">
-        <span class="btn-icon">✨</span>
-        <span class="btn-label">GG<br>SUMA</span>
+        <span class="btn-icon">🔥</span>
+        <span class="btn-label">RAGE<br>+50% DMG</span>
       </button>
 
       <!-- Row 2 -->
       <button class="action-btn btn-sayan" data-action="ssj">
-        <span class="btn-icon">🔥</span>
-        <span class="btn-label">SAYAN/<br>AURA</span>
+        <span class="btn-icon">💢</span>
+        <span class="btn-label">SSJ<br>AURA</span>
       </button>
       <button class="action-btn btn-ssj-god" data-action="ssj-god">
-        <span class="btn-icon">💢</span>
-        <span class="btn-label">SUPER<br>SAYAN GOD</span>
+        <span class="btn-icon">👑</span>
+        <span class="btn-label">SSJ<br>GOD</span>
       </button>
       <button class="action-btn btn-ssj-blue" data-action="ssj-blue">
         <span class="btn-icon">💎</span>
-        <span class="btn-label">S.SAYAN<br>GOD BLUE</span>
+        <span class="btn-label">SSJ<br>BLUE</span>
       </button>
       <button class="action-btn btn-kaioken" data-action="kaioken">
         <span class="btn-icon">🌊</span>
-        <span class="btn-label">SSB<br>KAIOKEN</span>
+        <span class="btn-label">KAIOKEN<br>x20</span>
       </button>
       <button class="action-btn btn-ultra" data-action="ultra">
         <span class="btn-icon">⭐</span>
@@ -143,16 +173,34 @@ export class UIManager {
       btn.addEventListener('click', () => {
         const action = btn.dataset.action;
         if (action === 'join-btn-action') {
-          // Scroll to join input or focus it
           const inp = document.getElementById('join-input');
           if (inp) inp.focus();
           return;
         }
         const player = this.engine.current.find(g => g.donated && g.alive);
-        if (!player || this.engine.state !== 'fighting') return;
-        if (btn.classList.contains('locked')) return;
+        if (!player || this.engine.state !== 'fighting') {
+          this.addTestMessage('⚔️ Nessun gladiatore in combattimento!', 'cmd');
+          return;
+        }
+        if (btn.classList.contains('locked')) {
+          this.addTestMessage('⛔ Energia insufficiente!', 'cmd');
+          return;
+        }
         this.engine.playerAction(action);
         this.animateBtn(btn);
+        
+        const actionNames = {
+          'energy': '💚 Cura',
+          'superko': '💥 Super Colpo',
+          'shield': '🛡️ Scudo',
+          'rage': '🔥 Rage Mode',
+          'ssj': '💢 SSJ Aura',
+          'ssj-god': '👑 SSJ God',
+          'ssj-blue': '💎 SSJ Blue',
+          'kaioken': '🌊 KaioKen',
+          'ultra': '⭐ Ultra Instinct'
+        };
+        this.addTestMessage(`${actionNames[action] || action} attivato!`, 'cmd');
       });
     });
 
@@ -165,7 +213,7 @@ export class UIManager {
     panel.id = 'join-panel';
     panel.innerHTML = `
       <input id="join-input" type="text" maxlength="12"
-             placeholder="Scrivi il tuo nome..." autocomplete="off" />
+             placeholder="Nome..." autocomplete="off" />
       <button id="join-btn">JOIN ⚔️</button>
     `;
     this.overlay.appendChild(panel);
@@ -179,9 +227,13 @@ export class UIManager {
 
   doJoin(inp) {
     const name = inp.value.trim();
-    const donated = Math.random() > 0.35; // 65% donated for demo
+    const donated = Math.random() > 0.35;
     const ok = this.engine.addGladiator(name || ('Warrior' + (Date.now() % 100)), donated);
-    if (ok !== false) { inp.value = ''; inp.blur(); }
+    if (ok !== false) { 
+      inp.value = ''; 
+      inp.blur();
+      this.addTestMessage(`👤 ${name || 'Warrior'} è entrato!`, 'user');
+    }
   }
 
   animateBtn(btn) {
@@ -202,7 +254,6 @@ export class UIManager {
     this.updatePanel('left', left);
     this.updatePanel('right', right);
 
-    // VS / state text
     const vsEl = document.getElementById('vs-text');
     const roundEl = document.getElementById('round-tag');
     if (vsEl) {
@@ -250,6 +301,7 @@ export class UIManager {
     if (nameEl) {
       nameEl.textContent = g.name;
       nameEl.style.color = g.colors.accent;
+      nameEl.style.textShadow = `0 0 15px ${g.colors.glow}88, 0 1px 4px rgba(0,0,0,0.9)`;
     }
     if (winsEl) {
       winsEl.textContent = g.wins > 0 ? ('★'.repeat(Math.min(g.wins, 5))) : '';
@@ -262,19 +314,18 @@ export class UIManager {
       hpFill.style.boxShadow = `0 0 6px ${hpColor}88`;
     }
     if (hpVal) {
-      hpVal.textContent = Math.ceil(g.hp) + 'HP';
+      hpVal.textContent = Math.ceil(g.hp) + '';
       hpVal.style.color = hpColor;
     }
     if (enFill) enFill.style.width = g.energy.toFixed(0) + '%';
     if (enVal)  enVal.textContent  = g.energy.toFixed(0) + '%';
 
-    // Status icons
     if (statusRow) {
       statusRow.innerHTML = '';
       if (g.blocking)        statusRow.innerHTML += `<span class="status-icon" style="color:#38bdf8;">🛡️</span>`;
       if (g.rageModeTimer > 0) statusRow.innerHTML += `<span class="status-icon" style="color:#ef4444;">🔥</span>`;
       if (g.superFlash > 0)  statusRow.innerHTML += `<span class="status-icon" style="color:#ffd700;">⚡</span>`;
-      if (!g.alive)          statusRow.innerHTML += `<span class="status-icon" style="color:#666;">💀 KO</span>`;
+      if (!g.alive)          statusRow.innerHTML += `<span class="status-icon" style="color:#666;">💀</span>`;
     }
   }
 
@@ -285,7 +336,7 @@ export class UIManager {
 
     const q = this.engine.queue.slice(0, 6);
     if (q.length === 0) {
-      capsules.innerHTML = '<div style="color:rgba(150,100,200,0.4);font-size:8px;letter-spacing:1px;padding:8px;">Nessuno in coda</div>';
+      capsules.innerHTML = '<div style="color:rgba(150,100,200,0.3);font-size:7px;letter-spacing:1px;padding:6px;">—</div>';
       return;
     }
 
@@ -293,14 +344,14 @@ export class UIManager {
       const cap = document.createElement('div');
       cap.className = 'queue-capsule' + (g.donated ? '' : ' locked');
       cap.style.borderColor = g.colors.cape + 'aa';
-      cap.style.boxShadow = `0 0 10px ${g.colors.glow}33`;
+      cap.style.boxShadow = `0 0 8px ${g.colors.glow}33`;
       cap.innerHTML = `
         <div class="queue-avatar" style="background:${g.colors.glow}44;border-color:${g.colors.accent};">${g.avatar}</div>
-        <div class="queue-name" style="color:${g.colors.accent};">${g.name.substring(0, 6)}</div>
+        <div class="queue-name" style="color:${g.colors.accent};">${g.name.substring(0, 5)}</div>
       `;
       if (!g.donated) {
         const lock = document.createElement('div');
-        lock.style.cssText = 'position:absolute;top:0;left:0;right:0;bottom:0;display:flex;align-items:center;justify-content:center;font-size:18px;background:rgba(0,0,0,0.65);border-radius:10px;';
+        lock.style.cssText = 'position:absolute;top:0;left:0;right:0;bottom:0;display:flex;align-items:center;justify-content:center;font-size:14px;background:rgba(0,0,0,0.6);border-radius:8px;';
         lock.textContent = '🔒';
         cap.appendChild(lock);
       }
@@ -309,7 +360,7 @@ export class UIManager {
 
     if (this.engine.queue.length > 6) {
       const more = document.createElement('div');
-      more.style.cssText = 'font-size:8px;color:rgba(200,150,255,0.6);align-self:center;padding:4px;';
+      more.style.cssText = 'font-size:6px;color:rgba(200,150,255,0.5);align-self:center;padding:3px;';
       more.textContent = `+${this.engine.queue.length - 6}`;
       capsules.appendChild(more);
     }
@@ -324,7 +375,7 @@ export class UIManager {
 
     this.actionBar.querySelectorAll('.action-btn').forEach(btn => {
       const action = btn.dataset.action;
-      if (action === 'join-btn-action') return; // always available
+      if (action === 'join-btn-action') return;
 
       if (!player || !inFight) {
         btn.classList.add('locked');
@@ -343,6 +394,7 @@ export class UIManager {
     flash.className = 'fight-flash';
     flash.textContent = '⚔️ FIGHT!';
     this.overlay.appendChild(flash);
+    this.addTestMessage('⚔️ INIZIA IL COMBATTIMENTO!', 'cmd');
     setTimeout(() => flash.remove(), 900);
   }
 
@@ -359,27 +411,28 @@ export class UIManager {
 
     modal.innerHTML = `
       <div class="modal-box victory-anim"
-           style="border-color:${winner.colors.cape};box-shadow:0 0 60px ${winner.colors.glow}55,0 0 120px ${winner.colors.glow}22;">
-        <div style="font-size:48px;margin-bottom:6px;">🏆</div>
+           style="border-color:${winner.colors.cape};box-shadow:0 0 50px ${winner.colors.glow}55;">
+        <div style="font-size:42px;margin-bottom:4px;">🏆</div>
         <div class="modal-title" style="color:${winner.colors.accent};">VITTORIA!</div>
-        <div style="font-size:20px;color:#fff;font-weight:900;margin:8px 0;letter-spacing:1px;
+        <div style="font-size:18px;color:#fff;font-weight:900;margin:6px 0;letter-spacing:1px;
                     text-shadow:0 0 15px ${winner.colors.glow};">
           ${winner.avatar} ${winner.name}
         </div>
-        <div style="font-size:13px;color:rgba(200,180,230,0.85);margin-bottom:8px;line-height:1.7;">
+        <div style="font-size:11px;color:rgba(200,180,230,0.85);margin-bottom:6px;line-height:1.6;">
           ${winsStr ? `Vittorie: <span style="color:#fbbf24;">${winsStr}</span>` : ''}
           ${donatedTag}
         </div>
-        <div style="font-size:10px;color:rgba(150,100,200,0.7);margin-bottom:12px;letter-spacing:1px;">
+        <div style="font-size:9px;color:rgba(150,100,200,0.6);margin-bottom:10px;letter-spacing:1px;">
           PROSSIMO SFIDANTE IN ARRIVO...
         </div>
-        <div style="height:4px;background:rgba(50,20,80,0.6);border-radius:2px;overflow:hidden;border:1px solid rgba(150,60,255,0.3);">
+        <div style="height:3px;background:rgba(50,20,80,0.5);border-radius:2px;overflow:hidden;border:1px solid rgba(150,60,255,0.2);">
           <div id="v-progress" style="height:100%;background:linear-gradient(90deg,${winner.colors.glow},${winner.colors.accent});width:0%;transition:width 4.8s linear;"></div>
         </div>
       </div>
     `;
     this.overlay.appendChild(modal);
     this.victoryEl = modal;
+    this.addTestMessage(`🏆 ${winner.name} VINCE!`, 'user');
 
     requestAnimationFrame(() => {
       const bar = modal.querySelector('#v-progress');
@@ -399,18 +452,17 @@ export class UIManager {
     modal.id = 'start-modal';
     modal.innerHTML = `
       <div class="modal-box">
-        <div style="font-size:52px;margin-bottom:8px;">💀</div>
+        <div style="font-size:44px;margin-bottom:6px;">💀</div>
         <div class="modal-title">KING OF BATTLE</div>
-        <div style="font-size:13px;color:#e879f9;margin-bottom:10px;letter-spacing:3px;text-shadow:0 0 10px rgba(232,121,249,0.6);">
+        <div style="font-size:11px;color:#e879f9;margin-bottom:8px;letter-spacing:3px;text-shadow:0 0 10px rgba(232,121,249,0.5);">
           COLOSSEO ARENA
         </div>
         <div class="modal-sub">
-          Scrivi il tuo nome e premi <strong style="color:#c084fc;">JOIN</strong> per entrare come gladiatore!<br>
-          <span style="color:#fbbf24;">Chi dona</span> sblocca le mosse speciali 👑<br><br>
-          🏆 Vince l'ultimo gladiatore in piedi<br>
-          ⭐ Il campione affronta il prossimo sfidante
+          <span style="color:#c084fc;">JOIN</span> per entrare come gladiatore!<br>
+          <span style="color:#fbbf24;">👑 Donatori</span> sbloccano mosse speciali<br><br>
+          🏆 Vince l'ultimo gladiatore in piedi
         </div>
-        <button class="modal-btn" id="start-btn">⚔️ ENTRA NELL'ARENA!</button>
+        <button class="modal-btn" id="start-btn">⚔️ ENTRA</button>
       </div>
     `;
     this.overlay.appendChild(modal);
@@ -422,6 +474,7 @@ export class UIManager {
         ctx.resume();
       } catch(e) {}
       this.refresh();
+      this.addTestMessage('🔥 ARENA APERTA! Scrivi JOIN', 'cmd');
     });
   }
 }
