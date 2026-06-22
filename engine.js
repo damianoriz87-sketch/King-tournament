@@ -2,9 +2,7 @@
 // KING OF BATTLE - COLOSSEO ARENA  |  Gothic Engine
 // ============================================================
 
-import { SpriteRenderer } from './sprite-renderer.js';
-
-const BG_URL = 'https://vtelpopqybfytrgzkomj.supabase.co/storage/v1/object/public/game-assets/public/81f16574-7d00-4cf9-a407-260ca9a19dfe/7ddb04db-17da-44e0-90f1-4c0dd3b7c565/f6a50795-b0aa-4388-8fe[...]';
+const BG_URL = 'https://vtelpopqybfytrgzkomj.supabase.co/storage/v1/object/public/game-assets/public/81f16574-7d00-4cf9-a407-260ca9a19dfe/7ddb04db-17da-44e0-90f1-4c0dd3b7c565/f6a50795-b0aa-4388-8fe6-ada5146dc16b.png';
 
 export const COLORS = [
   { cape: '#c084fc', accent: '#e879f9', glow: '#9333ea', name: 'VIOLA',   emoji: '💜' },
@@ -19,8 +17,6 @@ export const COLORS = [
 
 const MOVE_TYPES   = ['punch', 'kick', 'uppercut', 'combo', 'sweep'];
 const SPECIAL_MOVES = ['DRAGON FURY', 'THUNDER FIST', 'SHADOW SLASH', 'TORNADO KICK', 'IRON WILL', 'ULTRA INSTINCT'];
-
-// Emoji avatars for portrait
 const AVATARS = ['💀', '🐉', '🦅', '🔥', '⚡', '🌙', '👁️', '🗡️'];
 
 export class Gladiator {
@@ -54,7 +50,6 @@ export class Gladiator {
     this.attackCooldown = 0;
     this.tournamentSeed = Math.random();
 
-    // Aura particles
     this.auraParticles = [];
   }
 
@@ -65,7 +60,7 @@ export class Gladiator {
     this.hitFlash  = 10;
     this.shakeX    = 12;
     this.shakeTimer = 10;
-    if (this.hp <= 0) { this.alive = false; this.anim = 'knockout'; this.deathAnim = 70; }
+    if (this.hp <= 0) { this.alive = false; this.anim = 'death'; this.deathAnim = 70; }
     return dmg;
   }
 
@@ -80,14 +75,12 @@ export class Gladiator {
     if (this.blockTimer > 0)    { this.blockTimer--; this.blocking = this.blockTimer > 0; }
     if (this.rageModeTimer > 0)  this.rageModeTimer--;
     if (this.attackCooldown > 0) this.attackCooldown--;
-    if (this.deathAnim > 0)      this.deathAnim--;
 
     if (this.alive) {
       this.energy = Math.min(100, this.energy + 0.06);
     }
     this.animTimer++;
 
-    // Rage aura particles
     if (this.rageModeTimer > 0 && Math.random() < 0.4) {
       this.auraParticles.push({
         x: (Math.random() - 0.5) * 30,
@@ -137,13 +130,32 @@ export class GameEngine {
     this.lastTime = 0;
     this.usedColors = [];
 
-    // Sprite renderer for Street Fighter style characters
-    this.spriteRenderer = new SpriteRenderer();
-    this.spriteCache = new Map();
+    // Carica gli sprite dell'Orco (solo attacco)
+    this.sprites = { attack: [] };
+    this.loadOrcoAttackSprites();
 
     // Ambient particles
     this.ambientParticles = [];
     for (let i = 0; i < 18; i++) this.spawnAmbient();
+  }
+
+  loadOrcoAttackSprites() {
+    // Carica solo Attack (5 frame)
+    for (let i = 1; i <= 5; i++) {
+      const img = new Image();
+      img.src = `assets/sprites/orco/Attack/sprite/OgreAttack${i}.png`;
+      this.sprites.attack.push(img);
+    }
+    console.log('✅ Attacco Orco caricato!');
+  }
+
+  getSpriteFrame(anim, frame) {
+    const frames = this.sprites.attack || [];
+    return frames[frame % frames.length] || null;
+  }
+
+  getFrameCount(anim) {
+    return 5; // 5 frame di attacco
   }
 
   setUI(ui)     { this.ui   = ui; }
@@ -232,7 +244,6 @@ export class GameEngine {
   }
 
   update(dt) {
-    // Arena shake
     if (this.arenaShake > 0) {
       this.arenaShake--;
       this.arenaShakeX = (Math.random() - 0.5) * 7;
@@ -241,20 +252,17 @@ export class GameEngine {
 
     [...this.current, ...this.queue].forEach(g => g.update());
 
-    // Particles
     this.particles = this.particles.filter(p => {
       p.x += p.vx; p.y += p.vy; p.vy += 0.25;
       p.life--; p.alpha = p.life / p.maxLife;
       return p.life > 0;
     });
 
-    // Floating texts
     this.floatingTexts = this.floatingTexts.filter(t => {
       t.y -= 1.8; t.life--; t.alpha = t.life / t.maxLife;
       return t.life > 0;
     });
 
-    // Ambient
     this.ambientParticles = this.ambientParticles.filter(p => {
       p.x += p.vx; p.y += p.vy;
       p.life--; p.alpha = (p.life / p.maxLife) * 0.3;
@@ -437,7 +445,6 @@ export class GameEngine {
     this.state = 'victory';
     this.victoryTimer = 0;
     this.roundNum++;
-    winner.anim = 'victory';
     this.spawnParticles(winner.x, winner.y - 50, winner.colors.cape, 45);
     this.spawnParticles(225, 380, '#ffd700', 35);
     this.arenaShake = 35;
@@ -589,17 +596,14 @@ export class GameEngine {
     ctx.save();
     ctx.translate(this.arenaShakeX, this.arenaShakeY);
 
-    // Background
     if (this.bgImg.complete && this.bgImg.naturalWidth > 0) {
       ctx.drawImage(this.bgImg, 0, 0, this.W, this.H);
-      // Dark overlay to ensure UI readability
       ctx.fillStyle = 'rgba(3,1,10,0.35)';
       ctx.fillRect(0, 0, this.W, this.H);
     } else {
       this.drawFallbackBg(ctx);
     }
 
-    // Ambient particles
     this.ambientParticles.forEach(p => {
       ctx.save();
       ctx.globalAlpha = p.alpha;
@@ -610,7 +614,6 @@ export class GameEngine {
       ctx.restore();
     });
 
-    // Arena floor glow
     const floorGlow = ctx.createRadialGradient(225, 530, 20, 225, 530, 170);
     floorGlow.addColorStop(0, 'rgba(120,0,200,0.18)');
     floorGlow.addColorStop(1, 'transparent');
@@ -619,7 +622,6 @@ export class GameEngine {
     ctx.ellipse(225, 530, 170, 45, 0, 0, Math.PI * 2);
     ctx.fill();
 
-    // Bottom gradient (for UI area)
     const btmGrad = ctx.createLinearGradient(0, 560, 0, this.H);
     btmGrad.addColorStop(0, 'transparent');
     btmGrad.addColorStop(0.5, 'rgba(3,1,12,0.7)');
@@ -627,17 +629,14 @@ export class GameEngine {
     ctx.fillStyle = btmGrad;
     ctx.fillRect(0, 560, this.W, this.H - 560);
 
-    // Top gradient (behind HUD)
     const topGrad = ctx.createLinearGradient(0, 0, 0, 96);
     topGrad.addColorStop(0, 'rgba(3,1,12,0.88)');
     topGrad.addColorStop(1, 'transparent');
     ctx.fillStyle = topGrad;
     ctx.fillRect(0, 0, this.W, 96);
 
-    // Draw gladiators with Street Fighter style sprites
-    this.current.forEach(g => this.drawCharacter(ctx, g));
+    this.current.forEach(g => this.drawGladiator(ctx, g));
 
-    // Particles
     this.particles.forEach(p => {
       ctx.save();
       ctx.globalAlpha = p.alpha;
@@ -650,7 +649,6 @@ export class GameEngine {
       ctx.restore();
     });
 
-    // Floating texts
     this.floatingTexts.forEach(t => {
       ctx.save();
       ctx.globalAlpha = t.alpha;
@@ -667,7 +665,6 @@ export class GameEngine {
       ctx.restore();
     });
 
-    // FIGHT flash effect
     if (this.state === 'fighting' && this.fightTimer < 35) {
       const alpha = Math.max(0, 1 - this.fightTimer / 35);
       ctx.save();
@@ -692,14 +689,12 @@ export class GameEngine {
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, this.W, this.H);
 
-    // Gothic pillars
     for (let i = 0; i < 3; i++) {
       const px = 30 + i * 185;
       ctx.fillStyle = '#0f0a22';
       ctx.fillRect(px, 60, 22, 520);
       ctx.fillStyle = '#1a1035';
       ctx.fillRect(px + 3, 60, 6, 520);
-      // Torch glow
       const tglow = ctx.createRadialGradient(px + 11, 100, 3, px + 11, 100, 35);
       tglow.addColorStop(0, 'rgba(249,115,22,0.6)');
       tglow.addColorStop(1, 'transparent');
@@ -707,7 +702,6 @@ export class GameEngine {
       ctx.fillRect(px - 24, 65, 70, 70);
     }
 
-    // Floor
     ctx.fillStyle = '#0d0a1a';
     ctx.fillRect(0, 530, this.W, 200);
     ctx.strokeStyle = '#1a1535';
@@ -720,51 +714,35 @@ export class GameEngine {
     }
   }
 
-  drawCharacter(ctx, g) {
+  drawGladiator(ctx, g) {
     if (!g.alive && g.deathAnim <= 0) return;
 
-    // Get or create sprite
-    const spriteCanvas = this.spriteRenderer.generateCharacterSprite(g.colorIdx, g.side);
-    
     ctx.save();
-    
-    // Position
-    let drawX = g.x + g.shakeX - 35;
-    let drawY = g.y - 50;
+    const t = Date.now() / 320;
+    const bob = g.anim === 'idle' ? Math.sin(t + g.colorIdx * 0.8) * 3.5 : 0;
 
-    // Death animation
+    let drawX = g.x + g.shakeX;
+    let drawY = g.y + bob;
+
     if (!g.alive) {
       const prog = 1 - g.deathAnim / 70;
       ctx.globalAlpha = Math.max(0, 1 - prog * 1.8);
       drawY += prog * 50;
+      ctx.translate(drawX, drawY);
+      ctx.rotate(g.facing === 1 ? prog * 1.1 : -prog * 1.1);
+    } else {
+      ctx.translate(drawX, drawY);
+      if (g.facing === -1) ctx.scale(-1, 1);
     }
-
-    // Get animation frame
-    const frameIndex = this.spriteRenderer.getAnimationFrame(g.anim, g.animTimer);
-    
-    // Draw frame
-    this.spriteRenderer.drawFrame(ctx, spriteCanvas, frameIndex, drawX, drawY, 70, 100, g.facing === -1);
 
     // Glow aura
-    const glowColor = g.colors.glow;
-    const glowGrad = ctx.createRadialGradient(g.x, g.y - 50, 15, g.x, g.y - 50, 80);
-    glowGrad.addColorStop(0, glowColor + '44');
-    glowGrad.addColorStop(1, 'transparent');
-    ctx.fillStyle = glowGrad;
+    const glowR = ctx.createRadialGradient(0, -50, 10, 0, -50, 70);
+    glowR.addColorStop(0, g.colors.glow + '44');
+    glowR.addColorStop(1, 'transparent');
+    ctx.fillStyle = glowR;
     ctx.beginPath();
-    ctx.arc(g.x, g.y - 50, 80, 0, Math.PI * 2);
+    ctx.arc(0, -50, 70, 0, Math.PI * 2);
     ctx.fill();
-
-    // Super flash golden
-    if (g.superFlash > 0) {
-      const goldGlow = ctx.createRadialGradient(g.x, g.y - 50, 15, g.x, g.y - 50, 90);
-      goldGlow.addColorStop(0, 'rgba(255,215,0,0.6)');
-      goldGlow.addColorStop(1, 'transparent');
-      ctx.fillStyle = goldGlow;
-      ctx.beginPath();
-      ctx.arc(g.x, g.y - 50, 90, 0, Math.PI * 2);
-      ctx.fill();
-    }
 
     // Rage aura particles
     if (g.rageModeTimer > 0) {
@@ -775,11 +753,34 @@ export class GameEngine {
         ctx.shadowColor = p.color;
         ctx.shadowBlur = 6;
         ctx.beginPath();
-        ctx.arc(g.x + p.x, g.y + p.y - 40, p.size, 0, Math.PI * 2);
+        ctx.arc(p.x, p.y - 40, p.size, 0, Math.PI * 2);
         ctx.fill();
         ctx.restore();
       });
     }
+
+    // Hit flash
+    if (g.hitFlash > 0 && g.hitFlash % 2 === 0) {
+      ctx.filter = 'brightness(8) saturate(0)';
+    }
+
+    // Super flash golden
+    if (g.superFlash > 0) {
+      const goldGlow = ctx.createRadialGradient(0, -50, 15, 0, -50, 80);
+      goldGlow.addColorStop(0, 'rgba(255,215,0,0.5)');
+      goldGlow.addColorStop(1, 'transparent');
+      ctx.fillStyle = goldGlow;
+      ctx.beginPath();
+      ctx.arc(0, -50, 80, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    const scale = g.anim === 'uppercut' ? 1.18 : g.anim === 'kick' ? 1.1 : 1;
+    
+    // NUOVO: disegna lo sprite dell'Orco (solo attacco)
+    this.drawOrcoAttack(ctx, g, scale);
+
+    ctx.restore();
 
     // Shield ring
     if (g.blocking) {
@@ -795,8 +796,235 @@ export class GameEngine {
       ctx.stroke();
       ctx.restore();
     }
+  }
 
+  drawOrcoAttack(ctx, g, scale) {
+    // Usa sempre l'animazione di attacco per testare
+    const frame = Math.floor(Date.now() / 150) % 5;
+    const sprite = this.getSpriteFrame('attack', frame);
+    
+    if (sprite && sprite.complete && sprite.naturalWidth > 0) {
+      ctx.save();
+      ctx.scale(scale, scale);
+      ctx.drawImage(sprite, -30, -70, 60, 80);
+      ctx.restore();
+    } else {
+      // Fallback: disegna lo stickman
+      this.drawStickmanFallback(ctx, g, scale);
+    }
+  }
+
+  drawStickmanFallback(ctx, g, scale) {
+    const c = g.colors;
+    const anim = g.anim;
+    const t = Date.now() / 200;
+
+    let armAngle = 0, legSplay = 0, bodyLean = 0;
+    if (anim === 'punch')    { armAngle = -0.75; bodyLean = 0.18; }
+    if (anim === 'kick')     { legSplay = 0.65;  bodyLean = -0.12; }
+    if (anim === 'uppercut') { armAngle = -1.3;  bodyLean = 0.22; }
+    if (anim === 'combo')    { armAngle = Math.sin(t) * 0.85; bodyLean = 0.12; }
+    if (anim === 'sweep')    { legSplay = -0.85; bodyLean = 0.06; }
+    if (anim === 'rage')     { armAngle = Math.sin(t * 2.2) * 0.55; }
+    if (anim === 'block')    { armAngle = 0.35; }
+
+    if (bodyLean !== 0) ctx.rotate(bodyLean);
+
+    // Shadow on ground
+    ctx.save();
+    ctx.globalAlpha = 0.25;
+    ctx.fillStyle = '#000';
+    ctx.beginPath();
+    ctx.ellipse(0, 35, 25, 6, 0, 0, Math.PI * 2);
+    ctx.fill();
     ctx.restore();
+
+    // CAPE
+    ctx.fillStyle = c.cape;
+    ctx.strokeStyle = 'rgba(0,0,0,0.4)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(-4, -58);
+    ctx.quadraticCurveTo(-22 + Math.sin(t * 0.7) * 5, -20, -24 + Math.sin(t * 0.5) * 7, 12);
+    ctx.lineTo(-7, 2);
+    ctx.lineTo(-3, -53);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    // BODY
+    ctx.fillStyle = '#e8e0f0';
+    ctx.strokeStyle = '#1a0a2e';
+    ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    ctx.roundRect(-13, -56, 26, 40, 5);
+    ctx.fill();
+    ctx.stroke();
+
+    // Chest markings
+    ctx.strokeStyle = c.cape + 'aa';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(-8, -52); ctx.lineTo(-8, -18);
+    ctx.moveTo(8, -52);  ctx.lineTo(8, -18);
+    ctx.stroke();
+
+    // Belt
+    ctx.fillStyle = c.accent;
+    ctx.strokeStyle = c.glow;
+    ctx.lineWidth = 1;
+    ctx.fillRect(-13, -22, 26, 7);
+    ctx.strokeRect(-13, -22, 26, 7);
+
+    ctx.fillStyle = '#ffd700';
+    ctx.fillRect(-4, -21, 8, 5);
+
+    // HEAD
+    ctx.fillStyle = '#f0ece8';
+    ctx.strokeStyle = '#1a0a2e';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.ellipse(0, -76, 20, 23, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+
+    // Face
+    ctx.fillStyle = '#1a0a2e';
+    const eyeY = anim === 'idle' ? -80 : -82;
+    ctx.beginPath();
+    ctx.ellipse(-7, eyeY, 4.5, 6, 0, 0, Math.PI * 2);
+    ctx.ellipse(7, eyeY, 4.5, 6, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = c.glow;
+    ctx.beginPath();
+    ctx.arc(-6, eyeY, 2, 0, Math.PI * 2);
+    ctx.arc(8, eyeY, 2, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#fff';
+    ctx.beginPath();
+    ctx.arc(-8, eyeY - 2, 1.5, 0, Math.PI * 2);
+    ctx.arc(6, eyeY - 2, 1.5, 0, Math.PI * 2);
+    ctx.fill();
+
+    if (anim !== 'idle' && anim !== 'block') {
+      ctx.strokeStyle = '#8b0000';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(0, -68, 6, 0.2, Math.PI - 0.2);
+      ctx.stroke();
+    }
+
+    // ARMS
+    ctx.lineCap = 'round';
+    ctx.strokeStyle = '#d0c8e0';
+    ctx.lineWidth = 7;
+    ctx.beginPath();
+    ctx.moveTo(-8, -48);
+    ctx.lineTo(-22, -30 + armAngle * 18);
+    ctx.stroke();
+
+    ctx.strokeStyle = '#e8e0f0';
+    ctx.lineWidth = 7;
+    const faeX = 22 + armAngle * 12;
+    const faeY = -26 + armAngle * 22;
+    ctx.beginPath();
+    ctx.moveTo(8, -48);
+    ctx.lineTo(faeX, faeY);
+    ctx.stroke();
+
+    // SWORD
+    ctx.save();
+    ctx.translate(faeX, faeY);
+    ctx.rotate(armAngle - 0.28);
+
+    ctx.fillStyle = '#3d1f08';
+    ctx.fillRect(-14, -3, 13, 7);
+    ctx.strokeStyle = '#fbbf24';
+    ctx.lineWidth = 1.5;
+    for (let i = 0; i < 3; i++) {
+      ctx.beginPath();
+      ctx.moveTo(-13 + i * 4, -3);
+      ctx.lineTo(-13 + i * 4, 4);
+      ctx.stroke();
+    }
+    ctx.fillStyle = '#8B6914';
+    ctx.strokeStyle = '#5a4500';
+    ctx.lineWidth = 1;
+    ctx.fillRect(-12, -4, 22, 8);
+    ctx.strokeRect(-12, -4, 22, 8);
+    ctx.fillStyle = '#c8d0d8';
+    ctx.beginPath();
+    ctx.moveTo(8, -2);
+    ctx.lineTo(44, -5);
+    ctx.lineTo(44, 0);
+    ctx.lineTo(8, 5);
+    ctx.closePath();
+    ctx.fill();
+    ctx.strokeStyle = '#e8f0f8';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(9, -1.5);
+    ctx.lineTo(42, -4);
+    ctx.stroke();
+    if (g.rageModeTimer > 0) {
+      ctx.strokeStyle = '#ff4400';
+      ctx.lineWidth = 2;
+      ctx.shadowColor = '#ff4400';
+      ctx.shadowBlur = 8;
+      ctx.beginPath();
+      ctx.moveTo(8, 0); ctx.lineTo(44, -3);
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+    }
+    ctx.restore();
+
+    // SHIELD
+    ctx.save();
+    ctx.translate(-24, -32);
+    ctx.rotate(legSplay * 0.3 + (anim === 'block' ? -0.3 : 0));
+    ctx.fillStyle = '#6b3d1e';
+    ctx.strokeStyle = '#3d2010';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.ellipse(0, 0, 13, 17, 0.15, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = c.accent;
+    ctx.beginPath();
+    ctx.arc(0, 0, 5.5, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = c.glow;
+    ctx.beginPath();
+    ctx.arc(0, 0, 2.5, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+
+    // LEGS
+    ctx.strokeStyle = '#1a0a2e';
+    ctx.lineWidth = 5.5;
+    ctx.lineCap = 'round';
+
+    ctx.beginPath();
+    ctx.moveTo(-5, -16);
+    ctx.lineTo(-10 - legSplay * 16, 12);
+    ctx.lineTo(-8 - legSplay * 10, 30);
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.moveTo(5, -16);
+    ctx.lineTo(13 + legSplay * 10, 12);
+    ctx.lineTo(10 + legSplay * 5, 30);
+    ctx.stroke();
+
+    ctx.fillStyle = '#3d2010';
+    ctx.strokeStyle = '#1a0a00';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.ellipse(-8 - legSplay * 10, 32, 9, 4, 0, 0, Math.PI * 2);
+    ctx.fill(); ctx.stroke();
+    ctx.beginPath();
+    ctx.ellipse(10 + legSplay * 5, 32, 9, 4, 0, 0, Math.PI * 2);
+    ctx.fill(); ctx.stroke();
   }
 }
 
