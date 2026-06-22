@@ -793,7 +793,6 @@ export class GameEngine {
       // 🎯 PERSONAGGIO INGRANDITO: 100x120 invece di 80x100
       ctx.drawImage(sprite, -50, -95, 100, 120);
     } else {
-      // Fallback
       ctx.fillStyle = '#ff6600';
       ctx.fillRect(-45, -90, 90, 110);
       ctx.fillStyle = '#ffffff';
