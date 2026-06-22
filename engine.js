@@ -82,7 +82,6 @@ export class Gladiator {
     if (this.alive) this.energy = Math.min(100, this.energy + 0.06);
     this.animTimer++;
     
-    // Avanzamento frame animazione
     if (this.alive || this.anim === 'die') {
       this.frameTime++;
       let speed = 6;
@@ -139,7 +138,6 @@ export class GameEngine {
     this.lastTime = 0;
     this.usedColors = [];
     
-    // Carica TUTTI gli sprite dell'Orco
     this.orcoSprites = {
       idle: [],
       walk: [],
@@ -768,7 +766,6 @@ export class GameEngine {
       ctx.shadowBlur = 30;
     }
 
-    // Determina l'animazione corrente
     let anim = 'idle';
     if (!g.alive) anim = 'die';
     else if (g.anim === 'attack' || g.anim === 'punch' || g.anim === 'kick') anim = 'attack';
@@ -776,7 +773,6 @@ export class GameEngine {
     else if (g.anim === 'walk') anim = 'walk';
     else if (g.hitFlash > 0) anim = 'damage';
     
-    // Se è in attacco o morte, usa il frame corrente
     let frame = g.currentFrame;
     if (anim === 'idle' || anim === 'walk' || anim === 'run') {
       frame = Math.floor(Date.now() / 150) % this.getFrameCount(anim);
@@ -794,39 +790,38 @@ export class GameEngine {
     const sprite = this.getOrcoFrame(anim, frame);
     
     if (sprite && sprite.complete && sprite.naturalWidth > 0) {
-      ctx.drawImage(sprite, -40, -80, 80, 100);
+      // 🎯 PERSONAGGIO INGRANDITO: 100x120 invece di 80x100
+      ctx.drawImage(sprite, -50, -95, 100, 120);
     } else {
-      // Fallback: quadrato arancione
+      // Fallback
       ctx.fillStyle = '#ff6600';
-      ctx.fillRect(-35, -75, 70, 90);
+      ctx.fillRect(-45, -90, 90, 110);
       ctx.fillStyle = '#ffffff';
-      ctx.font = 'bold 12px Arial';
+      ctx.font = 'bold 14px Arial';
       ctx.textAlign = 'center';
-      ctx.fillText('ORCO', 0, -40);
+      ctx.fillText('ORCO', 0, -45);
     }
 
-    // Rage aura
     if (g.rageModeTimer > 0) {
       ctx.globalAlpha = 0.3 + 0.2 * Math.sin(Date.now() / 100);
       ctx.fillStyle = '#ff4400';
       ctx.beginPath();
-      ctx.arc(0, -30, 45, 0, Math.PI * 2);
+      ctx.arc(0, -30, 50, 0, Math.PI * 2);
       ctx.fill();
     }
 
     ctx.restore();
 
-    // Shield ring
     if (g.blocking) {
       ctx.save();
-      const sx = g.x + (g.facing === 1 ? 35 : -35);
+      const sx = g.x + (g.facing === 1 ? 40 : -40);
       ctx.strokeStyle = '#38bdf8';
       ctx.lineWidth = 3;
       ctx.globalAlpha = 0.55 + 0.35 * Math.sin(Date.now() / 90);
       ctx.shadowColor = '#38bdf8';
       ctx.shadowBlur = 12;
       ctx.beginPath();
-      ctx.arc(sx, g.y - 30, 35, 0, Math.PI * 2);
+      ctx.arc(sx, g.y - 30, 40, 0, Math.PI * 2);
       ctx.stroke();
       ctx.restore();
     }
