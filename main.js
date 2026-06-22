@@ -1,6 +1,5 @@
 import { GameEngine } from './engine.js';
 import { UIManager } from './ui.js';
-import { ChatSimulator } from './chat.js';
 
 document.addEventListener('DOMContentLoaded', () => {
   const canvas = document.getElementById('gameCanvas');
@@ -8,14 +7,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const engine = new GameEngine(canvas);
   const ui = new UIManager(overlay, engine);
-  const chat = new ChatSimulator(overlay, engine);
 
   engine.setUI(ui);
-  engine.setChat(chat);
 
   engine.init();
   ui.init();
-  chat.init();
 
   // Live-refresh HP bars every frame
   (function tick() {
