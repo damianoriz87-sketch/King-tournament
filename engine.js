@@ -1,5 +1,5 @@
 // ============================================================
-// KING OF BATTLE - COLOSSEO ARENA  |  Orco Animations
+// KING OF BATTLE - COLOSSEO ARENA  |  Orco + Samurai
 // ============================================================
 
 const BG_URL = 'https://vtelpopqybfytrgzkomj.supabase.co/storage/v1/object/public/game-assets/public/81f16574-7d00-4cf9-a407-260ca9a19dfe/7ddb04db-17da-44e0-90f1-4c0dd3b7c565/f6a50795-b0aa-4388-8fe6-ada5146dc16b.png';
@@ -19,13 +19,15 @@ const MOVE_TYPES = ['punch', 'kick', 'uppercut', 'combo', 'sweep'];
 const SPECIAL_MOVES = ['DRAGON FURY', 'THUNDER FIST', 'SHADOW SLASH', 'TORNADO KICK', 'IRON WILL', 'ULTRA INSTINCT'];
 const AVATARS = ['💀', '🐉', '🦅', '🔥', '⚡', '🌙', '👁️', '🗡️'];
 
+// ─── GLADIATOR ──────────────────────────────────────────────
 export class Gladiator {
-  constructor(name, colorIdx, side) {
+  constructor(name, colorIdx, side, character = 'orco') {
     this.name = name;
     this.colorIdx = colorIdx % COLORS.length;
     this.colors = COLORS[this.colorIdx];
     this.avatar = AVATARS[colorIdx % AVATARS.length];
     this.side = side;
+    this.character = character; // 'orco' o 'samurai'
     this.hp = 100;
     this.maxHp = 100;
     this.alive = true;
@@ -60,11 +62,11 @@ export class Gladiator {
     this.hitFlash = 10;
     this.shakeX = 12;
     this.shakeTimer = 10;
-    if (this.hp <= 0) { 
-      this.alive = false; 
-      this.anim = 'die'; 
-      this.deathAnim = 70; 
-      this.currentFrame = 0; 
+    if (this.hp <= 0) {
+      this.alive = false;
+      this.anim = 'die';
+      this.deathAnim = 70;
+      this.currentFrame = 0;
     }
     return dmg;
   }
@@ -81,7 +83,7 @@ export class Gladiator {
     if (this.attackCooldown > 0) this.attackCooldown--;
     if (this.alive) this.energy = Math.min(100, this.energy + 0.06);
     this.animTimer++;
-    
+
     if (this.alive || this.anim === 'die') {
       this.frameTime++;
       let speed = 6;
@@ -92,7 +94,7 @@ export class Gladiator {
         this.currentFrame++;
       }
     }
-    
+
     if (this.rageModeTimer > 0 && Math.random() < 0.4) {
       this.auraParticles.push({
         x: (Math.random() - 0.5) * 30,
@@ -110,6 +112,7 @@ export class Gladiator {
   }
 }
 
+// ─── GAME ENGINE ────────────────────────────────────────────
 export class GameEngine {
   constructor(canvas) {
     this.canvas = canvas;
@@ -137,7 +140,8 @@ export class GameEngine {
     this.chat = null;
     this.lastTime = 0;
     this.usedColors = [];
-    
+
+    // SPRITE ORCO
     this.orcoSprites = {
       idle: [],
       walk: [],
@@ -147,13 +151,26 @@ export class GameEngine {
       damage: [],
       die: []
     };
-    this.orcoLoaded = false;
     this.loadOrcoSprites();
-    
+
+    // SPRITE SAMURAI
+    this.samuraiSprites = {
+      idle: [],
+      run: [],
+      die: [],
+      hit1: [],
+      hit2: [],
+      hit3: [],
+      jump1: [],
+      jump2: []
+    };
+    this.loadSamuraiSprites();
+
     this.ambientParticles = [];
     for (let i = 0; i < 18; i++) this.spawnAmbient();
   }
 
+  // ─── CARICA ORCO ──────────────────────────────────────────
   loadOrcoSprites() {
     const anims = {
       idle: { count: 10, prefix: 'OgreIdle', path: 'Idle' },
@@ -164,29 +181,12 @@ export class GameEngine {
       damage: { count: 4, prefix: 'OgreDamage', path: 'TakeDamage' },
       die: { count: 16, prefix: 'OgreDie', path: 'Die' }
     };
-    
-    let total = 0;
-    let loaded = 0;
-    
+
     Object.keys(anims).forEach(key => {
       const { count, prefix, path } = anims[key];
-      total += count;
       this.orcoSprites[key] = [];
-      
       for (let i = 1; i <= count; i++) {
         const img = new Image();
-        img.onload = () => {
-          loaded++;
-          if (loaded === total) {
-            this.orcoLoaded = true;
-            console.log('✅ TUTTI GLI SPRITE ORCO CARICATI!');
-          }
-        };
-        img.onerror = () => {
-          console.warn(`⚠️ ERRORE: ${prefix}${i}.png`);
-          loaded++;
-          if (loaded === total) this.orcoLoaded = true;
-        };
         img.src = `assets/sprites/orco/${path}/sprite/${prefix}${i}.png`;
         this.orcoSprites[key].push(img);
       }
@@ -199,7 +199,7 @@ export class GameEngine {
     return frames[frame % frames.length] || null;
   }
 
-  getFrameCount(anim) {
+  getOrcoFrameCount(anim) {
     const counts = {
       idle: 10,
       walk: 11,
@@ -212,6 +212,73 @@ export class GameEngine {
     return counts[anim] || 1;
   }
 
+  // ─── CARICA SAMURAI ──────────────────────────────────────
+  loadSamuraiSprites() {
+    const anims = {
+      idle: { count: 3, prefix: 'samurai_idle', path: 'Idle' },
+      run: { count: 3, prefix: 'samurai_run', path: 'Run' },
+      die: { count: 5, prefix: 'samurai_die', path: 'Die' },
+      hit1: { count: 3, prefix: 'samurai_hit', path: 'Hit1' },
+      hit2: { count: 4, prefix: 'samurai_hit', path: 'Hit2' },
+      hit3: { count: 3, prefix: 'samurai_hit', path: 'Hit3' },
+      jump1: { count: 5, prefix: 'samurai_jump', path: 'Jump1' },
+      jump2: { count: 3, prefix: 'samurai_jump', path: 'Jump2' }
+    };
+
+    Object.keys(anims).forEach(key => {
+      const { count, prefix, path } = anims[key];
+      this.samuraiSprites[key] = [];
+      for (let i = 1; i <= count; i++) {
+        const img = new Image();
+        // Calcola il numero corretto per hit1, hit2, hit3
+        let num = i;
+        if (key === 'hit1') num = i;           // 1,2,3
+        else if (key === 'hit2') num = i + 1;   // 2,3,4
+        else if (key === 'hit3') num = i + 2;   // 3,4,5
+        img.src = `assets/sprites/samurai/${path}/Sprites/${prefix}${num}.png`;
+        this.samuraiSprites[key].push(img);
+      }
+    });
+  }
+
+  getSamuraiFrame(anim, frame) {
+    const frames = this.samuraiSprites[anim] || this.samuraiSprites.idle;
+    if (!frames || frames.length === 0) return null;
+    return frames[frame % frames.length] || null;
+  }
+
+  getSamuraiFrameCount(anim) {
+    const counts = {
+      idle: 3,
+      run: 3,
+      die: 5,
+      hit1: 3,
+      hit2: 4,
+      hit3: 3,
+      jump1: 5,
+      jump2: 3
+    };
+    return counts[anim] || 1;
+  }
+
+  // ─── GET FRAME (in base al personaggio) ──────────────────
+  getSpriteFrame(character, anim, frame) {
+    if (character === 'samurai') {
+      return this.getSamuraiFrame(anim, frame);
+    } else {
+      return this.getOrcoFrame(anim, frame);
+    }
+  }
+
+  getFrameCount(character, anim) {
+    if (character === 'samurai') {
+      return this.getSamuraiFrameCount(anim);
+    } else {
+      return this.getOrcoFrameCount(anim);
+    }
+  }
+
+  // ─── METODI PRINCIPALI ────────────────────────────────────
   setUI(ui) { this.ui = ui; }
   setChat(chat) { this.chat = chat; }
 
@@ -219,9 +286,9 @@ export class GameEngine {
     this.loop(0);
     setTimeout(() => {
       if (this.queue.length === 0 && this.current.length === 0) {
-        this.addGladiator('PABLO', true);
-        this.addGladiator('WILLIAM', true);
-        this.addGladiator('NOEMYC', false);
+        this.addGladiator('PABLO', true, 'orco');
+        this.addGladiator('WILLIAM', true, 'samurai');
+        this.addGladiator('NOEMYC', false, 'orco');
       }
     }, 1800);
   }
@@ -249,7 +316,7 @@ export class GameEngine {
     return idx;
   }
 
-  addGladiator(name, donated = false) {
+  addGladiator(name, donated = false, character = 'orco') {
     if (!name || name.trim() === '') name = 'Warrior' + (++this.nameCounter);
     name = name.trim().substring(0, 10).toUpperCase();
     const allNames = [...this.queue, ...this.current].map(g => g.name);
@@ -257,13 +324,13 @@ export class GameEngine {
     const colorIdx = this.pickColor();
     if (this.current.length < 2 && this.state !== 'victory') {
       const side = this.current.length === 0 ? 'left' : 'right';
-      const g = new Gladiator(name, colorIdx, side);
+      const g = new Gladiator(name, colorIdx, side, character);
       g.donated = donated;
       this.current.push(g);
       if (this.current.length === 2) this.startFight();
       this.chat?.addMessage(name, `⚔️ ${name} entra nell'arena!`, g.colors.cape);
     } else {
-      const g = new Gladiator(name, colorIdx, 'queue');
+      const g = new Gladiator(name, colorIdx, 'queue', character);
       g.donated = donated;
       this.queue.push(g);
       this.chat?.addMessage(name, `⏳ ${name} in coda...`, g.colors.cape);
@@ -357,7 +424,7 @@ export class GameEngine {
     attacker.currentFrame = 0;
     attacker.frameTime = 0;
     attacker.isAttacking = true;
-    
+
     const targetX = defender.x + (attacker.side === 'left' ? -35 : 35);
     const startX = attacker.x;
     const frames = 12;
@@ -379,10 +446,10 @@ export class GameEngine {
           const ret = setInterval(() => {
             rf++;
             attacker.x = targetX + (startX - targetX) * (rf / 10);
-            if (rf >= 10) { 
-              clearInterval(ret); 
-              attacker.x = startX; 
-              attacker.anim = 'idle'; 
+            if (rf >= 10) {
+              clearInterval(ret);
+              attacker.x = startX;
+              attacker.anim = 'idle';
               attacker.currentFrame = 0;
               attacker.isAttacking = false;
             }
@@ -629,6 +696,7 @@ export class GameEngine {
     } catch(e) { /* silent */ }
   }
 
+  // ─── DRAW ──────────────────────────────────────────────────
   draw() {
     const ctx = this.ctx;
     ctx.save();
@@ -673,7 +741,7 @@ export class GameEngine {
     ctx.fillStyle = topGrad;
     ctx.fillRect(0, 0, this.W, 96);
 
-    this.current.forEach(g => this.drawOrco(ctx, g));
+    this.current.forEach(g => this.drawCharacter(ctx, g));
 
     this.particles.forEach(p => {
       ctx.save();
@@ -750,13 +818,14 @@ export class GameEngine {
     }
   }
 
-  drawOrco(ctx, g) {
+  // ─── DISEGNA PERSONAGGIO (ORCO o SAMURAI) ──────────────
+  drawCharacter(ctx, g) {
     if (!g.alive && g.deathAnim <= 0) return;
 
     ctx.save();
     ctx.translate(g.x, g.y);
     if (g.facing === -1) ctx.scale(-1, 1);
-    
+
     if (g.shakeTimer > 0) ctx.translate(g.shakeX, 0);
     if (g.hitFlash > 0 && g.hitFlash % 2 === 0) {
       ctx.filter = 'brightness(8) saturate(0)';
@@ -770,42 +839,57 @@ export class GameEngine {
     if (!g.alive) anim = 'die';
     else if (g.anim === 'attack' || g.anim === 'punch' || g.anim === 'kick') anim = 'attack';
     else if (g.anim === 'run') anim = 'run';
-    else if (g.anim === 'walk') anim = 'walk';
-    else if (g.hitFlash > 0) anim = 'damage';
-    
+    else if (g.anim === 'walk') anim = 'run';
+    else if (g.hitFlash > 0) anim = 'hit';
+
+    // Mappa per Samurai
+    let samuraiAnim = anim;
+    if (g.character === 'samurai') {
+      if (anim === 'attack') samuraiAnim = 'hit1';
+      else if (anim === 'hit') samuraiAnim = 'hit2';
+      else if (anim === 'die') samuraiAnim = 'die';
+      else if (anim === 'run') samuraiAnim = 'run';
+      else if (anim === 'idle') samuraiAnim = 'idle';
+    }
+
     let frame = g.currentFrame;
-    if (anim === 'idle' || anim === 'walk' || anim === 'run') {
-      frame = Math.floor(Date.now() / 150) % this.getFrameCount(anim);
+    const frameCount = this.getFrameCount(g.character, g.character === 'samurai' ? samuraiAnim : anim);
+
+    if (anim === 'idle' || anim === 'run') {
+      frame = Math.floor(Date.now() / 150) % frameCount;
     } else if (anim === 'attack') {
-      if (frame >= 5) {
+      if (frame >= frameCount) {
         g.anim = 'idle';
         g.currentFrame = 0;
         anim = 'idle';
         frame = 0;
       }
     } else if (anim === 'die') {
-      if (frame >= 16) frame = 15;
+      if (frame >= frameCount) frame = frameCount - 1;
     }
-    
-    const sprite = this.getOrcoFrame(anim, frame);
-    
+
+    const sprite = this.getSpriteFrame(g.character, g.character === 'samurai' ? samuraiAnim : anim, frame);
+
     if (sprite && sprite.complete && sprite.naturalWidth > 0) {
-      // 🎯 PERSONAGGIO INGRANDITO: 100x120 invece di 80x100
-      ctx.drawImage(sprite, -50, -95, 100, 120);
+      // Samurai è più piccolo, lo ingrandiamo un po'
+      const scaleX = g.character === 'samurai' ? 80 : 100;
+      const scaleY = g.character === 'samurai' ? 100 : 120;
+      ctx.drawImage(sprite, -scaleX/2, -scaleY, scaleX, scaleY);
     } else {
-      ctx.fillStyle = '#ff6600';
-      ctx.fillRect(-45, -90, 90, 110);
+      // Fallback
+      ctx.fillStyle = g.character === 'samurai' ? '#ff4444' : '#ff6600';
+      ctx.fillRect(-35, -75, 70, 90);
       ctx.fillStyle = '#ffffff';
-      ctx.font = 'bold 14px Arial';
+      ctx.font = 'bold 12px Arial';
       ctx.textAlign = 'center';
-      ctx.fillText('ORCO', 0, -45);
+      ctx.fillText(g.character === 'samurai' ? 'SAMURAI' : 'ORCO', 0, -40);
     }
 
     if (g.rageModeTimer > 0) {
       ctx.globalAlpha = 0.3 + 0.2 * Math.sin(Date.now() / 100);
       ctx.fillStyle = '#ff4400';
       ctx.beginPath();
-      ctx.arc(0, -30, 50, 0, Math.PI * 2);
+      ctx.arc(0, -30, 45, 0, Math.PI * 2);
       ctx.fill();
     }
 
@@ -813,14 +897,14 @@ export class GameEngine {
 
     if (g.blocking) {
       ctx.save();
-      const sx = g.x + (g.facing === 1 ? 40 : -40);
+      const sx = g.x + (g.facing === 1 ? 35 : -35);
       ctx.strokeStyle = '#38bdf8';
       ctx.lineWidth = 3;
       ctx.globalAlpha = 0.55 + 0.35 * Math.sin(Date.now() / 90);
       ctx.shadowColor = '#38bdf8';
       ctx.shadowBlur = 12;
       ctx.beginPath();
-      ctx.arc(sx, g.y - 30, 40, 0, Math.PI * 2);
+      ctx.arc(sx, g.y - 30, 35, 0, Math.PI * 2);
       ctx.stroke();
       ctx.restore();
     }
