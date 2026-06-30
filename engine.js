@@ -2,7 +2,7 @@
 // KING OF BATTLE - COLOSSEO ARENA  |  Orco + Samurai
 // ============================================================
 
-const BG_URL = 'https://vtelpopqybfytrgzkomj.supabase.co/storage/v1/object/public/game-assets/public/81f16574-7d00-4cf9-a407-260ca9a19dfe/7ddb04db-17da-44e0-90f1-4c0dd3b7c565/f6a50795-b0aa-4388-8fe6-ada5146dc16b.png';
+const BG_URL = 'assets/bg/Boxing-arena.png';
 
 export const COLORS = [
   { cape: '#c084fc', accent: '#e879f9', glow: '#9333ea', name: 'VIOLA', emoji: '💜' },
